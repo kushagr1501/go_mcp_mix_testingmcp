@@ -96,25 +96,48 @@
 
 package main
 
+import (
+	"fmt"
+	"time"
+)
+
 func main() {
 	client, err := NewMCPClient("C:\\Users\\skush\\OneDrive\\Desktop\\testingmcp")
 
-	if err!=nil {
+	if err != nil {
 		panic(err)
 	}
 
-	files := []string{
-		//extracted paths
+	files, err := list_directory(
+		client,
+		"C:\\Users\\skush\\OneDrive\\Desktop\\testingmcp",
+	)
+
+	if err != nil {
+		panic(err)
 	}
+	fmt.Println("FILES COUNT:", len(files))
 
 	for _, f := range files {
 		info, err := GetFileInfo(client, f)
-		if err!=nil {
+		if err != nil {
 			continue
 		}
+		fmt.Printf(
+			"%s | %d bytes | modified %s\n",
+			info.Path,
+			info.SizeBytes,
+			info.ModifiedAt.Format(time.RFC3339),
+		)
 
-		//we have to do something with the info variable later 
-		
+		if IsLikelyUnused(info, 60) {
+			fmt.Printf(
+				"[UNUSED] %s — last accessed %s\n",
+				info.Path,
+				info.AccessedAt.Format("2006-01-02"),
+			)
 
+		}
 	}
+
 }
