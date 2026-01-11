@@ -1,12 +1,18 @@
 package main
 
-type FILEINFO struct{
-	Path string
-	Size string 
-	IsDirectory string
-	MimeType string         
-	ModifedTime string
-	LastAccessedTime string
+import (
+	"time"
+)
+
+type FileInfo struct {
+	Path        string
+	SizeBytes   int64
+	CreatedAt   time.Time
+	ModifiedAt  time.Time
+	AccessedAt  time.Time
+	IsFile      bool
+	IsDirectory bool
+	MimeType    string
 }
 
 //btw MimeType tells what's the extension of a file ,whether it's .pdf,.txt etc
