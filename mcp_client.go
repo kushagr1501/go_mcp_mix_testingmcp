@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"io"
 	"os/exec"
+	"bufio"
 )
 
 type MCPClient struct {
@@ -45,27 +46,35 @@ func (c *MCPClient) ToolCall(name string, params map[string]any) ([]byte, error)
 	}
 	c.nextID++
 
-	// Fix: Add type assertion for io.Writer
+	// Fixed : Add type assertion for io.Writer
 	json.NewEncoder(c.stdin.(io.Writer)).Encode(request)
-	// Fix: Add type assertion for io.WriteCloser
+	// Fixed : Add type assertion for io.WriteCloser
 
-	c.stdin.(io.WriteCloser).Close() //tells the mcp no more request
+	// c.stdin.(io.WriteCloser).Close() //tells the mcp no more request
 
-	//  READ THE FULL RESPONSE FROM THE MCP SERVER 
-	buf := make([]byte, 1024) //data comes in chunks
+	//  READ THE FULL RESPONSE FROM THE MCP SERVER
+	// buf := make([]byte, 1024) //data comes in chunks
 	out := []byte{}
 
-	for {
-		n, err := c.stdout.(io.Reader).Read(buf)
-		if n > 0 {
-			out = append(out, buf[:n]...)
-		}
-		if err != nil {
-			break
-		}
+	// for {
+	// 	n, err := c.stdout.(io.Reader).Read(buf)
+	// 	if n > 0 {
+	// 		out = append(out, buf[:n]...)
+	// 	}
+	// 	if err != nil {
+	// 		break
+	// 	}
+	// }
+	scanner := bufio.NewScanner(c.stdout.(io.Reader))
+	scanner.Buffer(make([]byte, 1024), 1024*1024)
+	if scanner.Scan() {
+		out = append(out, scanner.Bytes()...)
 	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err
+	}
+
 	return out, nil
 
 }
-
-
