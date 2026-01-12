@@ -98,11 +98,12 @@ package main
 
 import (
 	"fmt"
-	"time"
+	// "time"
 )
 
 func main() {
-	client, err := NewMCPClient("C:\\Users\\skush\\OneDrive\\Desktop\\testingmcp")
+	desiredpath := "C:\\Users\\skush\\OneDrive\\Desktop\\testingmcp"
+	client, err := NewMCPClient(desiredpath)
 
 	if err != nil {
 		panic(err)
@@ -110,7 +111,7 @@ func main() {
 
 	files, err := list_directory(
 		client,
-		"C:\\Users\\skush\\OneDrive\\Desktop\\testingmcp",
+		desiredpath,
 	)
 
 	if err != nil {
@@ -123,21 +124,28 @@ func main() {
 		if err != nil {
 			continue
 		}
-		fmt.Printf(
-			"%s | %d bytes | modified %s\n",
-			info.Path,
-			info.SizeBytes,
-			info.ModifiedAt.Format(time.RFC3339),
-		)
+		// fmt.Printf(
+		// 	"%s | %d bytes | modified %s\n",
+		// 	info.Path,
+		// 	info.SizeBytes,
+		// 	info.ModifiedAt.Format(time.RFC3339),
+		// )
 
-		if IsLikelyUnused(info, 60) {
-			fmt.Printf(
-				"[UNUSED] %s — last accessed %s\n",
-				info.Path,
-				info.AccessedAt.Format("2006-01-02"),
-			)
+		// if IsLikelyUnused(info, 60) {
+		// 	fmt.Printf(
+		// 		"[UNUSED] %s — last accessed %s\n",
+		// 		info.Path,
+		// 		info.AccessedAt.Format("2006-01-02"),
+		// 	)
 
+		// }
+		if exp := ExplainUnused(info, 0); exp != nil {
+			fmt.Println("[UNUSED]", info.Path)
+			for _, e := range exp.Evidence {
+				fmt.Println("  -", e)
+			}
 		}
+
 	}
 
 }
