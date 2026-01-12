@@ -19,10 +19,10 @@ func list_directory(client *MCPClient, path string) ([]string, error) {
 		return nil, err
 	}
 
-	// Find text block and extract file paths
 	var files []string
 
-	re := regexp.MustCompile(`file://([^\s\)]+)`)
+	// URLs - captures everything until closing parenthesis
+	re := regexp.MustCompile(`file://([^\)]+)`)
 
 	for _, item := range resp.Result.Content {
 		if item.Type == "text" {
@@ -34,7 +34,5 @@ func list_directory(client *MCPClient, path string) ([]string, error) {
 	}
 
 	return files, nil
-
-
 
 }

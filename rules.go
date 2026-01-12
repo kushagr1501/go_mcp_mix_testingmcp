@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"time"
+	// "strings"
 )
 
 // func IsLikelyUnused(info *FileInfo, days int) bool {
@@ -18,6 +19,12 @@ func ExplainUnused(info *FileInfo, days int) *Explanation {
 	if info.IsDirectory {
 		return nil
 	}
+
+	// FIX
+	if info.AccessedAt.IsZero() {
+		return nil
+	}
+
 	if time.Since(info.AccessedAt) < time.Duration(days)*24*time.Hour {
 		return nil
 	}
@@ -31,14 +38,26 @@ func ExplainUnused(info *FileInfo, days int) *Explanation {
 		},
 	}
 
-}
+}	
 
 func ExplainZeroByte(info *FileInfo) *Explanation {
 	if info.IsDirectory {
 		return nil
 	}
 
-	if info.SizeBytes != 0 {
+	// Get the REAL file size (works with OneDrive)
+	realSize, err := GetRealFileSize(info.Path)
+	if err == nil && realSize > 0 {
+		return nil // File actually has content
+	}
+
+	// Also skip if it's a cloud placeholder (size is in cloud)
+	if IsCloudPlaceholder(info.Path) {
+		return nil
+	}
+
+	// If we get here, file is genuinely 0 bytes
+	if info.SizeBytes != 0 && realSize != 0 {
 		return nil
 	}
 

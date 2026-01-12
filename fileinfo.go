@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -70,6 +71,27 @@ func GetFileInfo(client *MCPClient, path string) (*FileInfo, error) {
 
 			case strings.HasPrefix(line, "MIME Type:"):
 				info.MimeType = strings.TrimSpace(strings.TrimPrefix(line, "MIME Type:"))
+			}
+		}
+		if !info.IsDirectory {
+			realSize, err := GetRealFileSize(path)
+			if err != nil {
+				extensions := []string{".pdf", ".doc", ".docx", ".txt"}
+				for _, ext := range extensions {
+					if size, err2 := GetRealFileSize(path + ext); err2 == nil {
+						realSize = size
+						err = nil
+						info.Path = path + ext
+						fmt.Printf("DEBUG: %s - Tried with %s, found: %d bytes\n", path, ext, realSize)
+						break
+					}
+				}
+			}
+			if err == nil {
+				fmt.Printf("DEBUG: %s - Real size: %d bytes\n", info.Path, realSize)
+				info.SizeBytes = realSize
+			} else {
+				fmt.Printf("DEBUG: %s - GetRealFileSize error: %v\n", path, err)
 			}
 		}
 	}
