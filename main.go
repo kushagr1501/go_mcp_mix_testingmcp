@@ -146,6 +146,15 @@ func main() {
 			}
 		}
 
+		if expzero := ExplainZeroByte(info); expzero != nil {
+			fmt.Println("[ZERO-BYTE]", info.Path)
+			fmt.Println("Reason:", expzero.Reason)
+			for _, e := range expzero.Evidence {
+				fmt.Println(" -", e)
+			}
+
+		}
+
 	}
 
 }

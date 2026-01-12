@@ -32,3 +32,21 @@ func ExplainUnused(info *FileInfo, days int) *Explanation {
 	}
 
 }
+
+func ExplainZeroByte(info *FileInfo) *Explanation {
+	if info.IsDirectory {
+		return nil
+	}
+
+	if info.SizeBytes != 0 {
+		return nil
+	}
+
+	return &Explanation{
+		Reason: "File is empty (0 bytes)",
+		Evidence: []string{
+			"File size is 0 bytes",
+			"Likely placeholder or incomplete file",
+		},
+	}
+}
