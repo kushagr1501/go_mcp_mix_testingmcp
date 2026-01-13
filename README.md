@@ -1,5 +1,5 @@
 # Filesystem Analyzer
-
+![Demo](assets/v0demo.gif "Click to view demo")
 A command-line tool that scans directories and identifies unused files, zero-byte files, and other storage issues - with special support for OneDrive and cloud storage.
 
 ## Features
