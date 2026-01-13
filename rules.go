@@ -20,12 +20,11 @@ func ExplainUnused(info *FileInfo, days int) *Explanation {
 		return nil
 	}
 
-	// FIX
 	if info.AccessedAt.IsZero() {
 		return nil
 	}
 
-	if time.Since(info.AccessedAt) < time.Duration(days)*24*time.Hour {
+	if time.Since(info.ModifiedAt) < time.Duration(days)*24*time.Hour {
 		return nil
 	}
 
@@ -33,12 +32,12 @@ func ExplainUnused(info *FileInfo, days int) *Explanation {
 		Reason: "File apprears unused",
 		Evidence: []string{
 			fmt.Sprintf("Not accessed in last %d days", days),
-			fmt.Sprintf("Last accessed: %s", info.AccessedAt.Format("2006-01-02")),
+			fmt.Sprintf("Last modified: %s", info.ModifiedAt.Format("2006-01-02")),
 			fmt.Sprintf("Size: %d bytes", info.SizeBytes),
 		},
 	}
 
-}	
+}
 
 func ExplainZeroByte(info *FileInfo) *Explanation {
 	if info.IsDirectory {

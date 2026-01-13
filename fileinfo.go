@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -82,16 +81,12 @@ func GetFileInfo(client *MCPClient, path string) (*FileInfo, error) {
 						realSize = size
 						err = nil
 						info.Path = path + ext
-						fmt.Printf("DEBUG: %s - Tried with %s, found: %d bytes\n", path, ext, realSize)
 						break
 					}
 				}
 			}
 			if err == nil {
-				fmt.Printf("DEBUG: %s - Real size: %d bytes\n", info.Path, realSize)
 				info.SizeBytes = realSize
-			} else {
-				fmt.Printf("DEBUG: %s - GetRealFileSize error: %v\n", path, err)
 			}
 		}
 	}

@@ -116,11 +116,12 @@ cloud.go           # Windows API for OneDrive support
 5. **Output** - Prints findings to console
 
 ### OneDrive Handling
-OneDrive creates placeholder files that appear as 0 bytes until downloaded. This project:
+OneDrive creates placeholder files that appear as 0 bytes until downloaded. This is common even for files that exist locally but are synced with OneDrive. This project:
 - Uses Windows `FindFirstFile` API to get actual file sizes
 - Detects cloud placeholder attributes
 - Skips placeholder files from zero-byte warnings
 - Correctly identifies real files from cloud storage
+- Works with both locally synced OneDrive files and cloud-only placeholders
 
 ## Analysis Rules
 
