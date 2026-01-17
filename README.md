@@ -166,4 +166,4 @@ This project is open source and available under the MIT License.
 
 ## Support
 
-Found a bug or have a feature request? Please [open an issue](https://github.com/yourusername/go-filesystem/issues).
+Found a bug or have a feature request? Please [open an issue](https://github.com/kushagr1501/go-filesystem/issues).
