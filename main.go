@@ -11,6 +11,10 @@ import (
 var filterConfig FilterConfig
 var Filtertypestr string
 
+var deleteMode bool
+var undoMode bool
+var historyMode bool
+
 func init() {
 	flag.StringVar(&filterConfig.ExcludePattern, "exclude", "e", "Exclude files matching pattern")
 	flag.StringVar(&filterConfig.IncludePattern, "include", "i", "Include only files matching pattern")
@@ -19,10 +23,25 @@ func init() {
 
 	flag.StringVar(&Filtertypestr, "filter", "f", "Filter by type (all, pdf, doc, img, code, archive)")
 
+	// Deletion flags
+	flag.BoolVar(&deleteMode, "delete", false, "Enable safe file deletion mode")
+	flag.BoolVar(&undoMode, "undo", false, "Undo last file deletion")
+	flag.BoolVar(&historyMode, "history", false, "Show deletion history")
+
 }
 
 func main() {
 	flag.Parse()
+
+	if historyMode {
+		handleHistoryMode()
+		return
+	}
+
+	if undoMode {
+		handleUndoMode()
+		return
+	}
 
 	filterConfig.FileType = FILTERALL
 
@@ -70,6 +89,10 @@ func main() {
 	}
 
 	PrintFileCount(len(files))
+	if deleteMode {
+		handleDeleteMode(files, client)
+		return
+	}
 
 	unusedCount := 0
 	zeroByteCount := 0
@@ -109,4 +132,130 @@ func main() {
 	PrintDivider()
 
 	PrintScanComplete(len(files), unusedCount, zeroByteCount)
+}
+
+func handleHistoryMode() {
+	PrintHeader("Deletion History")
+
+	history, err := LoadHistory(GetHistoryFilePath())
+	if err != nil {
+		PrintError("Failed to load history: " + err.Error())
+		return
+	}
+
+	ShowHistory(history)
+}
+
+func handleUndoMode() {
+	PrintHeader("Undo Last Deletion")
+
+	history, err := LoadHistory(GetHistoryFilePath())
+	if err != nil {
+		PrintError("Failed to load history: " + err.Error())
+		return
+	}
+
+	if err := UndoLastDeletion(history); err != nil {
+		PrintError("Failed to undo: " + err.Error())
+		return
+	}
+
+	// Save updated history
+	if err := SaveHistory(history, GetHistoryFilePath()); err != nil {
+		PrintError("Failed to save history: " + err.Error())
+		return
+	}
+
+	PrintSuccess("Undo completed successfully!")
+}
+
+func handleDeleteMode(files []string, client *MCPClient) {
+	PrintHeader("Safe File Deletion Mode")
+	PrintWarning("This will move files to the Recycle Bin - you can restore them later!")
+
+	// Load existing history
+	history, err := LoadHistory(GetHistoryFilePath())
+	if err != nil {
+		PrintError("Failed to load history: " + err.Error())
+		return
+	}
+
+	deletedCount := 0
+	skippedCount := 0
+
+	for _, f := range files {
+		// Apply filters
+		if !ShouldInclude(f, filterConfig) {
+			continue
+		}
+
+		info, err := GetFileInfo(client, f)
+		if err != nil {
+			continue
+		}
+
+		// Check size filter
+		if !ShouldIncludeSize(f, filterConfig, info.SizeBytes) {
+			continue
+		}
+
+		// Show file info and ask for confirmation
+		fmt.Printf("\n"+ColorCyan+"File %d:"+ColorReset+"\n", deletedCount+skippedCount+1)
+		fmt.Printf("Name: %s\n", getFileName(info.Path))
+		fmt.Printf("Size: %s\n", formatFileSize(info.SizeBytes))
+		fmt.Printf("Type: %s\n", getFileType(info.Path))
+		fmt.Printf("Path: %s\n", info.Path)
+
+		// Check if it's unused or zero-byte
+		if exp := ExplainUnused(info, 60); exp != nil {
+			fmt.Printf(ColorRed+"⚠ Unused: %s"+ColorReset+"\n", exp.Evidence)
+		}
+
+		if expzero := ExplainZeroByte(info); expzero != nil {
+			fmt.Printf(ColorRed+"⚠ Zero-byte: %s"+ColorReset+"\n", expzero.Reason)
+		}
+
+		// Ask for confirmation
+		if ConfirmDeletion(*info) {
+			if err := DeleteFile(*info, history); err != nil {
+				PrintError("Failed to delete file: " + err.Error())
+				skippedCount++
+				continue
+			}
+			PrintSuccess("File moved to Recycle Bin!")
+			deletedCount++
+		} else {
+			PrintInfo("Skipped")
+			skippedCount++
+		}
+
+		// Ask if user wants to continue
+		if deletedCount+skippedCount > 0 {
+			fmt.Printf("\n" + ColorYellow + "Continue? (Y/n): " + ColorReset)
+			var response string
+			fmt.Scanln(&response)
+			if response == "n" || response == "N" {
+				break
+			}
+		}
+	}
+
+	// Save history
+	if deletedCount > 0 {
+		if err := SaveHistory(history, GetHistoryFilePath()); err != nil {
+			PrintError("Failed to save history: " + err.Error())
+		} else {
+			PrintSuccess(fmt.Sprintf("History saved! %d files deleted.", deletedCount))
+		}
+	}
+
+	// Show summary
+	PrintDivider()
+	fmt.Printf(ColorGreen + "Deletion Complete!" + ColorReset + "\n")
+	fmt.Printf("Files deleted: %s%d%s\n", ColorYellow+ColorBold, deletedCount, ColorReset)
+	fmt.Printf("Files skipped: %s%d%s\n", ColorDim, skippedCount, ColorReset)
+	PrintDivider()
+
+	PrintInfo("Use --history to see deleted files")
+	PrintInfo("Use --undo to restore the last deleted file")
 }
