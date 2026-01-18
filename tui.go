@@ -22,13 +22,12 @@ const (
 //     logo := `
 //         /\_____/\
 //        /  o   o  \
-//       ( ==  ^  == )
+//        ( ==  ^  ==  )
 //        )         (
 //       (           )
-//      ( (  )   (  ) )
-//     (__(__)___(__)__)
-// `
-//     fmt.Printf("%s%s%s\n", ColorCyan+ColorBold, logo, ColorReset)
+//      (__(__)___(__)__
+//     `
+//     fmt.Printf("%s%s%s%s\n", ColorCyan+ColorBold, logo, ColorReset)
 // }
 
 func PrintHeader(title string) {
@@ -149,4 +148,44 @@ func PrintScanComplete(totalFiles, unusedCount, zeroByteCount int) {
 	PrintFileInfo("Zero-Byte Files", fmt.Sprintf("%d", zeroByteCount))
 	PrintDivider()
 	fmt.Printf("\n")
+}
+
+func PrintInfo(message string) {
+	fmt.Printf("%s%sℹ %s%s\n",
+		ColorCyan,
+		strings.Repeat(" ", 4),
+		message,
+		ColorReset)
+}
+
+func formatFileSize(size int64) string {
+	const unit = 1024
+	if size < unit {
+		return fmt.Sprintf("%d B", size)
+	}
+	div, exp := int64(unit), 0
+	for n := size / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB", float64(size)/float64(div), "KMGTPE"[exp])
+}
+
+func getFileType(path string) string {
+	if strings.Contains(strings.ToLower(path), ".pdf") {
+		return "PDF"
+	}
+	if strings.Contains(strings.ToLower(path), ".doc") {
+		return "Document"
+	}
+	if strings.Contains(strings.ToLower(path), ".txt") {
+		return "Text"
+	}
+	if strings.Contains(strings.ToLower(path), ".jpg") || strings.Contains(strings.ToLower(path), ".png") {
+		return "Image"
+	}
+	if strings.Contains(strings.ToLower(path), ".mp4") || strings.Contains(strings.ToLower(path), ".avi") {
+		return "Video"
+	}
+	return "Unknown"
 }
