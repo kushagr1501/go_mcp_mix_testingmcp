@@ -74,24 +74,33 @@ var (
 // generally not modified unless the underlying Windows API changes.
 //
 // Note: This function is Windows-only
+
 func MoveToRecycleBin(filePath string) error {
-	// Convert to UTF-16 pointer as windowsApi SHFileOperationW
-	pathPtr, err := syscall.UTF16PtrFromString(filePath + "\x00\x00")
+	// SHFileOperationW requires double-null terminated string
+	// UTF16PtrFromString adds ONE null, we need to manually create
+	// the double-null terminated buffer
+	
+	// First, convert to UTF-16
+	pathUTF16, err := syscall.UTF16FromString(filePath)
 	if err != nil {
 		return fmt.Errorf("failed to convert path: %v", err)
 	}
+	
+	// UTF16FromString already adds one null terminator
+	// Append another null for double-null termination
+	pathUTF16 = append(pathUTF16, 0)
 
 	// Set up file operation structure
 	shFileOp := &_SHFILEOPSTRUCT{
 		WFunc:  FO_DELETE,
-		PFrom:  pathPtr,
+		PFrom:  &pathUTF16[0],
 		FFlags: FOF_ALLOWUNDO | FOF_NOCONFIRMATION | FOF_SILENT,
 	}
 
 	// Call Windows API
-	ret, _, err := procSHFileOperation.Call(uintptr(unsafe.Pointer(shFileOp)))
+	ret, _, _ := procSHFileOperation.Call(uintptr(unsafe.Pointer(shFileOp)))
 	if ret != 0 {
-		return fmt.Errorf("failed to move file to recycle bin: %v", err)
+		return fmt.Errorf("SHFileOperation failed with code: %d", ret)
 	}
 
 	return nil
@@ -255,7 +264,7 @@ func UndoLastDeletion(history *DeletionHistory) error {
 	fmt.Printf("File was moved to recycle bin from: %s\n", lastRecord.OrigionalFilePath)
 	fmt.Printf("Check your recycle bin to restore it manually.\n") //for now 
 	
-	// Remove that from history(make sure that file is removed manually )
+	// Remove that from history(make sure that file is removed manually)
 	history.Records = history.Records[:len(history.Records)-1]
 	
 	return nil
