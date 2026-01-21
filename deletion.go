@@ -77,9 +77,6 @@ var (
 
 func MoveToRecycleBin(filePath string) error {
 	// SHFileOperationW requires double-null terminated string
-	// UTF16PtrFromString adds ONE null, we need to manually create
-	// the double-null terminated buffer
-	
 	// First, convert to UTF-16
 	pathUTF16, err := syscall.UTF16FromString(filePath)
 	if err != nil {
